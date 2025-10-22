@@ -1,24 +1,13 @@
 {
   "name": "eone-skills",
-  "version": "1.0.0",
   "description": "Azure DevOps skills for pipeline monitoring, test analysis, work item management, and pull request lifecycle for eONE project",
-  "author": "Glen Schrader",
+  "version": "1.0.0",
+  "author": {
+    "name": "Glen Schrader",
+    "email": "glen.schrader@quorumsoftware.com"
+  },
+  "homepage": "https://github.com/glenschrader/eone-skills",
   "repository": "https://github.com/glenschrader/eone-skills",
-  "skills": [
-    {
-      "name": "ado-pipelines",
-      "path": "skills/ado-pipelines/SKILL.md",
-      "description": "Interact with Azure DevOps pipelines and builds using the Azure CLI DevOps extension"
-    },
-    {
-      "name": "ado-work-items",
-      "path": "skills/ado-work-items/SKILL.md",
-      "description": "Manage Azure DevOps work items, create new work items, link them to branches, and create pull requests"
-    },
-    {
-      "name": "ado-pr",
-      "path": "skills/ado-pr/SKILL.md",
-      "description": "Manage Azure DevOps pull requests including creating, reviewing, updating, merging PRs, and managing reviewers"
-    }
-  ]
+  "license": "MIT",
+  "keywords": ["azure-devops", "pipelines", "work-items", "pull-requests", "ado"]
 }
