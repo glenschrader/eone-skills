@@ -9,37 +9,15 @@
   },
   "plugins": [
     {
-      "name": "ado-pipelines",
-      "description": "Comprehensive Azure DevOps pipeline monitoring, test analysis, and flakiness detection",
-      "source": "./ado-pipelines",
-      "category": "development",
-      "version": "1.0.0",
-      "author": {
-        "name": "Glen Schrader",
-        "email": "glen.schrader@quorumsoftware.com"
-      }
-    },
-    {
-      "name": "ado-work-items",
-      "description": "Comprehensive Azure DevOps work item management including creating, updating, querying work items and linking to branches",
-      "source": "./ado-work-items",
-      "category": "development",
-      "version": "1.0.0",
-      "author": {
-        "name": "Glen Schrader",
-        "email": "glen.schrader@quorumsoftware.com"
-      }
-    },
-    {
-      "name": "ado-pr",
-      "description": "Comprehensive Azure DevOps pull request management including creating, reviewing, updating, merging, and managing PR lifecycle",
-      "source": "./ado-pr",
-      "category": "development",
-      "version": "1.0.0",
-      "author": {
-        "name": "Glen Schrader",
-        "email": "glen.schrader@quorumsoftware.com"
-      }
+      "name": "eone-skills",
+      "description": "Azure DevOps skills for eONE project including pipelines, work items, and pull requests",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./ado-pipelines",
+        "./ado-work-items",
+        "./ado-pr"
+      ]
     }
   ]
 }
