@@ -497,42 +497,48 @@ az repos pr list --repository eONE --status all --query "length([?status=='activ
 
 ## Tips and Best Practices
 
-1. **PR Descriptions**: Use multi-line descriptions with markdown for clarity:
+1. **IMPORTANT - Command Parameters**: Most PR commands only accept `--org` (not `--project`):
+   - **Accept both `--org` and `--project`**: `az repos pr list`, `az repos pr create`
+   - **Only accept `--org`**: `az repos pr show`, `az repos pr update`, `az repos pr set-vote`, `az repos pr reviewer`, `az repos pr work-item`, `az repos pr checkout`
+   - Set default organization: `az devops configure --defaults organization=https://dev.azure.com/YourOrg`
+   - When in doubt, use only `--org` parameter
+
+2. **PR Descriptions**: Use multi-line descriptions with markdown for clarity:
    ```bash
    --description "## Summary" "Brief overview" "" "## Changes" "- Change 1" "- Change 2"
    ```
 
-2. **Auto-Complete**: Enable for PRs that are ready but waiting on builds:
+3. **Auto-Complete**: Enable for PRs that are ready but waiting on builds:
    ```bash
    --auto-complete true --delete-source-branch true --squash true
    ```
 
-3. **Draft PRs**: Use for work-in-progress to get early feedback:
+4. **Draft PRs**: Use for work-in-progress to get early feedback:
    ```bash
    --draft true
    ```
 
-4. **Work Item Linking**: Always link PRs to work items for traceability:
+5. **Work Item Linking**: Always link PRs to work items for traceability:
    ```bash
    --work-items <WORK_ITEM_ID> --transition-work-items true
    ```
 
-5. **Required vs Optional Reviewers**: Use required reviewers for mandatory approvals:
+6. **Required vs Optional Reviewers**: Use required reviewers for mandatory approvals:
    ```bash
    --required-reviewers "lead@domain.com" --optional-reviewers "team@domain.com"
    ```
 
-6. **Labels**: Use consistent labeling for PR categorization:
+7. **Labels**: Use consistent labeling for PR categorization:
    ```bash
    --labels "feature" "high-priority" "breaking-change"
    ```
 
-7. **Query Formatting**: Use `-o table` for readable output, `-o tsv` for scripting:
+8. **Query Formatting**: Use `-o table` for readable output, `-o tsv` for scripting:
    ```bash
    az repos pr list --repository eONE -o table
    ```
 
-8. **Checkout PRs**: Review PRs locally before approving:
+9. **Checkout PRs**: Review PRs locally before approving:
    ```bash
    az repos pr checkout --id <PR_ID>
    ./gradlew test
@@ -582,6 +588,7 @@ az repos pr work-item add --id <PR_ID> --work-items <WORK_ITEM_ID>
 
 ## Troubleshooting
 
+- **"unrecognized arguments: --project"**: Most PR commands only accept `--org`, not `--project`. Only `az repos pr list` and `az repos pr create` accept `--project`. Use `--org` parameter or set default organization with `az devops configure --defaults organization=https://dev.azure.com/YourOrg`
 - **Authentication Issues**: Run `az devops login` or `az login --use-device-code`
 - **Organization Not Set**: Use `--org` parameter or set default with `az devops configure`
 - **PR Creation Fails**: Ensure source branch exists remotely and has commits ahead of target
