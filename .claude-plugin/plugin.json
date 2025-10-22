@@ -7,17 +7,17 @@
   "skills": [
     {
       "name": "ado-pipelines",
-      "path": "ado-pipelines/SKILL.md",
+      "path": "skills/ado-pipelines/SKILL.md",
       "description": "Interact with Azure DevOps pipelines and builds using the Azure CLI DevOps extension"
     },
     {
       "name": "ado-work-items",
-      "path": "ado-work-items/SKILL.md",
+      "path": "skills/ado-work-items/SKILL.md",
       "description": "Manage Azure DevOps work items, create new work items, link them to branches, and create pull requests"
     },
     {
       "name": "ado-pr",
-      "path": "ado-pr/SKILL.md",
+      "path": "skills/ado-pr/SKILL.md",
       "description": "Manage Azure DevOps pull requests including creating, reviewing, updating, merging PRs, and managing reviewers"
     }
   ]
