@@ -1,9 +1,9 @@
 {
-  "name": "claude-skills",
+  "name": "eone-skills",
   "version": "1.0.0",
-  "description": "Azure DevOps skills for pipeline monitoring, test analysis, work item management, and pull request lifecycle for Claude Code",
+  "description": "Azure DevOps skills for pipeline monitoring, test analysis, work item management, and pull request lifecycle for eONE project",
   "author": "Glen Schrader",
-  "repository": "https://github.com/glenschrader/claude-skills",
+  "repository": "https://github.com/glenschrader/eone-skills",
   "skills": [
     {
       "name": "ado-pipelines",

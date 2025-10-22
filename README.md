@@ -1,6 +1,6 @@
-# Claude Code Skills
+# eONE Skills
 
-A collection of custom Claude Code skills for Azure DevOps workflows.
+A collection of custom Claude Code skills for Azure DevOps workflows in the eONE project.
 
 ## Skills
 
@@ -62,14 +62,14 @@ Full pull request lifecycle management including creation, review, and merging.
 
 ```bash
 # Install from GitHub
-claude-code plugin install https://github.com/glenschrader/claude-skills
+claude-code plugin install https://github.com/glenschrader/eone-skills
 ```
 
 ### Manual Installation
 
 1. Clone this repository to your Claude Code skills folder:
    ```bash
-   git clone https://github.com/glenschrader/claude-skills ~/.claude/skills/custom-skills
+   git clone https://github.com/glenschrader/eone-skills ~/.claude/skills/eone-skills
    ```
 
 2. The skills will be automatically loaded by Claude Code

@@ -1,8 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "claude-skills",
+  "name": "eone-skills",
   "version": "1.0.0",
-  "description": "Custom Claude Code skills for Azure DevOps pipelines, testing, work item management, and pull request lifecycle",
+  "description": "Claude Code skills for Azure DevOps pipelines, testing, work item management, and pull request lifecycle for eONE project",
   "owner": {
     "name": "Glen Schrader",
     "email": "glen.schrader@quorumsoftware.com"
