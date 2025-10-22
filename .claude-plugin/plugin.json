@@ -1,7 +1,7 @@
 {
   "name": "claude-skills",
   "version": "1.0.0",
-  "description": "Azure DevOps skills for pipeline monitoring, test analysis, and work item management for Claude Code",
+  "description": "Azure DevOps skills for pipeline monitoring, test analysis, work item management, and pull request lifecycle for Claude Code",
   "author": "Glen Schrader",
   "repository": "https://github.com/glenschrader/claude-skills",
   "skills": [
@@ -14,6 +14,11 @@
       "name": "ado-work-items",
       "path": "ado-work-items/SKILL.md",
       "description": "Manage Azure DevOps work items, create new work items, link them to branches, and create pull requests"
+    },
+    {
+      "name": "ado-pr",
+      "path": "ado-pr/SKILL.md",
+      "description": "Manage Azure DevOps pull requests including creating, reviewing, updating, merging PRs, and managing reviewers"
     }
   ]
 }
