@@ -1,12 +1,22 @@
 {
-  "owner": "glenschrader",
+  "name": "claude-skills",
+  "owner": {
+    "name": "Glen Schrader",
+    "url": "https://github.com/glenschrader"
+  },
   "plugins": [
     {
       "name": "ado-pipelines",
-      "displayName": "ADO Pipelines",
       "version": "1.0.0",
       "description": "Comprehensive Azure DevOps pipeline monitoring, test analysis, and flakiness detection",
-      "author": "Glen Schrader",
+      "author": {
+        "name": "Glen Schrader",
+        "url": "https://github.com/glenschrader"
+      },
+      "source": {
+        "type": "github",
+        "url": "https://github.com/glenschrader/claude-skills"
+      },
       "repository": "https://github.com/glenschrader/claude-skills",
       "license": "MIT",
       "keywords": [
@@ -17,19 +27,7 @@
         "ci-cd",
         "flakiness-detection",
         "test-analysis"
-      ],
-      "categories": [
-        "DevOps",
-        "Testing",
-        "CI/CD"
-      ],
-      "readme": "ado-pipelines/README.md",
-      "icon": null,
-      "screenshots": [],
-      "requirements": {
-        "azureCli": "Azure CLI with DevOps extension",
-        "node": "Node.js for helper scripts"
-      }
+      ]
     }
   ]
 }
