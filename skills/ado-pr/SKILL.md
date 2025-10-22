@@ -270,46 +270,28 @@ az rest \
 
 #### Parsing PR Comments with Node.js
 
-To display comments in a readable format, save the following as `parse_pr_comments.js`:
+This skill includes a Node.js script `parse_pr_comments.js` for displaying comments in a readable format.
 
-```javascript
-const fs = require('fs');
-const data = JSON.parse(fs.readFileSync('pr_comments.json', 'utf8'));
-const threads = data.value || [];
+**Usage:**
+```bash
+# Parse default file (pr_comments.json)
+node parse_pr_comments.js
 
-console.log(`Total threads: ${threads.length}`);
-console.log(`Active (unresolved): ${threads.filter(t => t.status === 'active').length}`);
-console.log(`Resolved: ${threads.filter(t => t.status === 'fixed').length}`);
-console.log('');
-
-threads.forEach((thread, i) => {
-  const status = thread.status || 'unknown';
-  const context = thread.threadContext || {};
-  const filePath = context.filePath || 'General comment';
-  const line = context.rightFileStart?.line || '';
-
-  console.log(`\n=== Thread ${i+1} [${status.toUpperCase()}] ===`);
-  if (line) {
-    console.log(`Location: ${filePath}:${line}`);
-  } else {
-    console.log(`Location: ${filePath}`);
-  }
-
-  const comments = thread.comments || [];
-  comments.forEach(comment => {
-    if (comment.commentType === 'text') {
-      const author = comment.author?.displayName || 'Unknown';
-      const content = comment.content || '';
-      const date = (comment.publishedDate || '').substring(0, 10);
-      console.log(`  [${author}] ${date}`);
-      const displayContent = content.length > 300 ? content.substring(0, 300) + '...' : content;
-      console.log(`  ${displayContent}`);
-    }
-  });
-});
+# Parse specific file
+node parse_pr_comments.js pr_comments_118608.json
 ```
 
-Then run: `node parse_pr_comments.js`
+**Typical workflow:**
+```bash
+# 1. Fetch PR comments
+az rest \
+  --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file pr_comments.json
+
+# 2. Display formatted comments
+node parse_pr_comments.js pr_comments.json
+```
 
 #### Understanding Comment Thread Structure
 - **Thread**: A conversation about code or the PR in general
@@ -448,7 +430,7 @@ console.log(active);
 echo "Unresolved comments: $UNRESOLVED"
 
 # 4. Display all comments
-node parse_pr_comments.js
+node parse_pr_comments.js pr_comments_${PR_ID}.json
 
 # 5. Check out the PR locally
 az repos pr checkout --id $PR_ID
