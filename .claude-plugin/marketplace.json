@@ -11,12 +11,13 @@
     {
       "name": "eone-skills",
       "description": "Azure DevOps skills for eONE project including pipelines, work items, and pull requests",
-      "version": "1.0.0",
       "source": "./",
-      "author": {
-        "name": "Glen Schrader",
-        "email": "glen.schrader@quorumsoftware.com"
-      }
+      "strict": false,
+      "skills": [
+        "./skills/ado-pipelines",
+        "./skills/ado-work-items",
+        "./skills/ado-pr"
+      ]
     }
   ]
 }
