@@ -7,11 +7,32 @@ description: Manage Azure DevOps pull requests including creating, reviewing, up
 
 This skill helps you manage the complete pull request lifecycle in Azure DevOps using the Azure CLI DevOps extension.
 
+## ⚠️ Critical Requirements for REST API Calls
+
+When using `az rest` with Azure DevOps APIs (especially for PR comments), you MUST:
+
+1. **Add the `--resource` parameter**: `--resource "499b84ac-1321-427f-aa17-267ca6975798"`
+   - This is the Azure DevOps resource ID required for authentication
+   - Without it, you'll get authentication errors or HTML sign-in pages
+
+2. **Use `--output-file` instead of `-o json`**: To avoid Unicode encoding errors
+   - PR comments often contain special characters (∞, →, etc.) that cause codec errors
+   - Save to file, then parse with Node.js for proper Unicode handling
+
+**Example of correct REST API usage:**
+```bash
+az rest \
+  --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/118608/threads?api-version=7.0" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file pr_comments.json
+```
+
 ## Prerequisites
 
 - Azure CLI with the azure-devops extension installed
 - Authenticated to Azure DevOps (run `az login` and `az devops login`)
 - Default organization and project configured (or will be prompted)
+- Node.js installed (for parsing PR comments with Unicode characters)
 
 ## Core Capabilities
 
@@ -213,30 +234,82 @@ az repos pr reviewer remove --id <PR_ID> \
 
 ### 5. Viewing PR Comments and Threads
 
-The Azure CLI doesn't have direct commands for PR comments, but you can use the REST API:
+The Azure CLI doesn't have direct commands for PR comments, but you can use the REST API.
+
+**IMPORTANT**: When using `az rest` with Azure DevOps URLs, you MUST include the `--resource` parameter to avoid authentication issues. The resource ID for Azure DevOps is `499b84ac-1321-427f-aa17-267ca6975798`.
+
+Additionally, when dealing with Unicode characters (like ∞) in the output, you should save to a file using `--output-file` instead of using `-o json` to avoid encoding errors.
 
 ```bash
-# Get all comment threads for a PR
-az rest --url "https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repository}/pullRequests/<PR_ID>/threads?api-version=7.0" -o json
+# Get all comment threads for a PR (save to file to avoid encoding issues)
+az rest \
+  --url "https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repository}/pullRequests/<PR_ID>/threads?api-version=7.0" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file pr_comments.json
 
 # For QuorumSoftware organization and eONE repository:
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" -o json
+az rest \
+  --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file pr_comments.json
 
-# Get comment threads with specific fields
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
-  --query "value[].{id:id,status:status,filePath:threadContext.filePath,rightFileStart:threadContext.rightFileStart.line,comments:comments[].{author:author.displayName,date:publishedDate,content:content}}" \
-  -o json
+# Parse the output using Node.js for better handling
+node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('pr_comments.json', 'utf8'));
+const threads = data.value || [];
+console.log(\`Total: \${threads.length}, Active: \${threads.filter(t => t.status === 'active').length}, Resolved: \${threads.filter(t => t.status === 'fixed').length}\`);
+"
 
-# Filter for active comment threads only
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
-  --query "value[?status=='active'].{filePath:threadContext.filePath,comments:comments[].{author:author.displayName,content:content}}" \
-  -o json
-
-# Count comments by status
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
-  --query "{active:length(value[?status=='active']),resolved:length(value[?status=='fixed']),total:length(value)}" \
-  -o json
+# Alternative: If you want to use --query directly (may fail with special characters)
+az rest \
+  --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file pr_comments.json
 ```
+
+#### Parsing PR Comments with Node.js
+
+To display comments in a readable format, save the following as `parse_pr_comments.js`:
+
+```javascript
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('pr_comments.json', 'utf8'));
+const threads = data.value || [];
+
+console.log(`Total threads: ${threads.length}`);
+console.log(`Active (unresolved): ${threads.filter(t => t.status === 'active').length}`);
+console.log(`Resolved: ${threads.filter(t => t.status === 'fixed').length}`);
+console.log('');
+
+threads.forEach((thread, i) => {
+  const status = thread.status || 'unknown';
+  const context = thread.threadContext || {};
+  const filePath = context.filePath || 'General comment';
+  const line = context.rightFileStart?.line || '';
+
+  console.log(`\n=== Thread ${i+1} [${status.toUpperCase()}] ===`);
+  if (line) {
+    console.log(`Location: ${filePath}:${line}`);
+  } else {
+    console.log(`Location: ${filePath}`);
+  }
+
+  const comments = thread.comments || [];
+  comments.forEach(comment => {
+    if (comment.commentType === 'text') {
+      const author = comment.author?.displayName || 'Unknown';
+      const content = comment.content || '';
+      const date = (comment.publishedDate || '').substring(0, 10);
+      console.log(`  [${author}] ${date}`);
+      const displayContent = content.length > 300 ? content.substring(0, 300) + '...' : content;
+      console.log(`  ${displayContent}`);
+    }
+  });
+});
+```
+
+Then run: `node parse_pr_comments.js`
 
 #### Understanding Comment Thread Structure
 - **Thread**: A conversation about code or the PR in general
@@ -251,23 +324,25 @@ az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/rep
 #### Common Comment Queries
 
 ```bash
-# Get PR comments in a readable format
+# Get PR comments (save to file first to avoid encoding issues)
 PR_ID=<PR_ID>
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
-  --query "value[].{status:status,file:threadContext.filePath,line:threadContext.rightFileStart.line,thread:comments[].{author:author.displayName,comment:content}}" \
-  -o json
+az rest \
+  --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file pr_comments_${PR_ID}.json
 
-# Get only unresolved comments
-PR_ID=<PR_ID>
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
-  --query "value[?status=='active']" \
-  -o json
+# Then parse with Node.js
+node parse_pr_comments.js
 
-# Count unresolved comments
-PR_ID=<PR_ID>
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
-  --query "length(value[?status=='active'])" \
-  -o tsv
+# Or get a quick summary
+node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('pr_comments_${PR_ID}.json', 'utf8'));
+const threads = data.value || [];
+const active = threads.filter(t => t.status === 'active').length;
+const resolved = threads.filter(t => t.status === 'fixed').length;
+console.log(\`Total: \${threads.length}, Active: \${active}, Resolved: \${resolved}\`);
+"
 ```
 
 ### 6. Voting on Pull Requests
@@ -353,27 +428,35 @@ echo "Created PR #$PR_ID"
 
 ### Workflow 2: Complete PR Review with Comments
 ```bash
-# 1. View PR details and comments
+# 1. View PR details
 PR_ID=<PR_ID>
 az repos pr show --id $PR_ID
 
 # 2. Check existing comments/discussions
-az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
-  --query "value[].{status:status,file:threadContext.filePath,comments:comments[].{author:author.displayName,comment:content}}" \
-  -o json
+az rest \
+  --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file pr_comments_${PR_ID}.json
 
-# 3. Check for unresolved comments
-UNRESOLVED=$(az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
-  --query "length(value[?status=='active'])" -o tsv)
+# 3. Check for unresolved comments using Node.js
+UNRESOLVED=$(node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('pr_comments_${PR_ID}.json', 'utf8'));
+const active = data.value.filter(t => t.status === 'active').length;
+console.log(active);
+")
 echo "Unresolved comments: $UNRESOLVED"
 
-# 4. Check out the PR locally
+# 4. Display all comments
+node parse_pr_comments.js
+
+# 5. Check out the PR locally
 az repos pr checkout --id $PR_ID
 
-# 5. Review code and test changes
+# 6. Review code and test changes
 ./gradlew test
 
-# 6. Approve the PR (if all looks good)
+# 7. Approve the PR (if all looks good)
 az repos pr set-vote --id $PR_ID --vote approve
 ```
 
@@ -588,15 +671,48 @@ az repos pr work-item add --id <PR_ID> --work-items <WORK_ITEM_ID>
 
 ## Troubleshooting
 
+- **"Can't derive appropriate Azure AD resource"**: When using `az rest` with Azure DevOps URLs, you MUST add `--resource "499b84ac-1321-427f-aa17-267ca6975798"`. This is the Azure DevOps resource ID required for authentication.
+
+- **"'charmap' codec can't encode character"**: This occurs when PR comments contain Unicode characters (like ∞, →, etc.). Solution: Use `--output-file` instead of `-o json` to save the output to a file, then parse with Node.js which handles Unicode properly.
+
 - **"unrecognized arguments: --project"**: Most PR commands only accept `--org`, not `--project`. Only `az repos pr list` and `az repos pr create` accept `--project`. Use `--org` parameter or set default organization with `az devops configure --defaults organization=https://dev.azure.com/YourOrg`
-- **Authentication Issues**: Run `az devops login` or `az login --use-device-code`
+
+- **Authentication Issues**: Run `az devops login` or `az login --use-device-code`. If you get a sign-in page HTML response instead of JSON, your authentication token may have expired.
+
 - **Organization Not Set**: Use `--org` parameter or set default with `az devops configure`
+
 - **PR Creation Fails**: Ensure source branch exists remotely and has commits ahead of target
+
 - **Cannot Complete PR**: Check if all required policies have passed
+
 - **Merge Conflicts**: Rebase your branch on target branch and force push
+
 - **Cannot Bypass Policy**: Requires "Bypass policies when completing pull requests" permission
+
 - **Reviewer Not Found**: Use exact email or display name from Azure DevOps
+
 - **Auto-Complete Not Working**: Ensure all required policies are enabled and passing
+
+### Common Error Patterns
+
+```bash
+# ERROR: 'charmap' codec can't encode character '\u221e'
+# SOLUTION: Use --output-file and Node.js parsing
+az rest \
+  --url "https://dev.azure.com/quorumsoftware/..." \
+  --resource "499b84ac-1321-427f-aa17-267ca6975798" \
+  --output-file output.json
+node -e "const data = require('./output.json'); console.log(data);"
+
+# ERROR: Authentication token expired (returns HTML sign-in page)
+# SOLUTION: Re-authenticate
+az login
+az devops login
+
+# ERROR: Can't derive Azure AD resource
+# SOLUTION: Always add --resource parameter for az rest commands
+az rest --url "..." --resource "499b84ac-1321-427f-aa17-267ca6975798"
+```
 
 ## Integration with Work Items Skill
 
