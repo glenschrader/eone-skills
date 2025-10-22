@@ -211,7 +211,66 @@ az repos pr reviewer remove --id <PR_ID> \
   --reviewers "user@domain.com"
 ```
 
-### 5. Voting on Pull Requests
+### 5. Viewing PR Comments and Threads
+
+The Azure CLI doesn't have direct commands for PR comments, but you can use the REST API:
+
+```bash
+# Get all comment threads for a PR
+az rest --url "https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repository}/pullRequests/<PR_ID>/threads?api-version=7.0" -o json
+
+# For QuorumSoftware organization and eONE repository:
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" -o json
+
+# Get comment threads with specific fields
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
+  --query "value[].{id:id,status:status,filePath:threadContext.filePath,rightFileStart:threadContext.rightFileStart.line,comments:comments[].{author:author.displayName,date:publishedDate,content:content}}" \
+  -o json
+
+# Filter for active comment threads only
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
+  --query "value[?status=='active'].{filePath:threadContext.filePath,comments:comments[].{author:author.displayName,content:content}}" \
+  -o json
+
+# Count comments by status
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/<PR_ID>/threads?api-version=7.0" \
+  --query "{active:length(value[?status=='active']),resolved:length(value[?status=='fixed']),total:length(value)}" \
+  -o json
+```
+
+#### Understanding Comment Thread Structure
+- **Thread**: A conversation about code or the PR in general
+- **Status**: active (unresolved), fixed (resolved), closed, unknown
+- **threadContext**: Location in code (file path, line number)
+- **comments**: Array of comments in the thread
+  - **author**: Person who made the comment
+  - **content**: Comment text (can include markdown)
+  - **publishedDate**: When comment was posted
+  - **commentType**: text, system, codeChange
+
+#### Common Comment Queries
+
+```bash
+# Get PR comments in a readable format
+PR_ID=<PR_ID>
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --query "value[].{status:status,file:threadContext.filePath,line:threadContext.rightFileStart.line,thread:comments[].{author:author.displayName,comment:content}}" \
+  -o json
+
+# Get only unresolved comments
+PR_ID=<PR_ID>
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --query "value[?status=='active']" \
+  -o json
+
+# Count unresolved comments
+PR_ID=<PR_ID>
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --query "length(value[?status=='active'])" \
+  -o tsv
+```
+
+### 6. Voting on Pull Requests
 
 ```bash
 # Approve a PR
@@ -230,7 +289,7 @@ az repos pr set-vote --id <PR_ID> --vote reject
 az repos pr set-vote --id <PR_ID> --vote reset
 ```
 
-### 6. Managing Work Items
+### 7. Managing Work Items
 
 #### Link Work Items to PR
 ```bash
@@ -244,7 +303,7 @@ az repos pr work-item list --id <PR_ID>
 az repos pr work-item remove --id <PR_ID> --work-items 123456
 ```
 
-### 7. PR Policies
+### 8. PR Policies
 
 #### Check Policy Status
 ```bash
@@ -258,7 +317,7 @@ az repos pr policy list --id <PR_ID> -o table
 az repos pr policy queue --id <PR_ID> --evaluation-id <POLICY_EVALUATION_ID>
 ```
 
-### 8. Checking Out PRs Locally
+### 9. Checking Out PRs Locally
 
 ```bash
 # Checkout a PR branch locally
@@ -292,18 +351,30 @@ PR_ID=$(az repos pr create \
 echo "Created PR #$PR_ID"
 ```
 
-### Workflow 2: Complete PR Review
+### Workflow 2: Complete PR Review with Comments
 ```bash
-# 1. Check out the PR locally
-az repos pr checkout --id <PR_ID>
+# 1. View PR details and comments
+PR_ID=<PR_ID>
+az repos pr show --id $PR_ID
 
-# 2. Review code and test changes
+# 2. Check existing comments/discussions
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --query "value[].{status:status,file:threadContext.filePath,comments:comments[].{author:author.displayName,comment:content}}" \
+  -o json
+
+# 3. Check for unresolved comments
+UNRESOLVED=$(az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/git/repositories/eONE/pullRequests/${PR_ID}/threads?api-version=7.0" \
+  --query "length(value[?status=='active'])" -o tsv)
+echo "Unresolved comments: $UNRESOLVED"
+
+# 4. Check out the PR locally
+az repos pr checkout --id $PR_ID
+
+# 5. Review code and test changes
 ./gradlew test
 
-# 3. Approve the PR
-az repos pr set-vote --id <PR_ID> --vote approve
-
-# 4. Add comment (optional, done via Azure DevOps UI or REST API)
+# 6. Approve the PR (if all looks good)
+az repos pr set-vote --id $PR_ID --vote approve
 ```
 
 ### Workflow 3: Create PR with Full Configuration
