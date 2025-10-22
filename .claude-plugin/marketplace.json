@@ -1,33 +1,23 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-skills",
+  "version": "1.0.0",
+  "description": "Custom Claude Code skills for Azure DevOps and testing",
   "owner": {
     "name": "Glen Schrader",
-    "url": "https://github.com/glenschrader"
+    "email": "glen.schrader@quorumsoftware.com"
   },
   "plugins": [
     {
       "name": "ado-pipelines",
-      "version": "1.0.0",
       "description": "Comprehensive Azure DevOps pipeline monitoring, test analysis, and flakiness detection",
+      "source": "./ado-pipelines",
+      "category": "development",
+      "version": "1.0.0",
       "author": {
         "name": "Glen Schrader",
-        "url": "https://github.com/glenschrader"
-      },
-      "source": {
-        "type": "github",
-        "url": "https://github.com/glenschrader/claude-skills"
-      },
-      "repository": "https://github.com/glenschrader/claude-skills",
-      "license": "MIT",
-      "keywords": [
-        "azure-devops",
-        "ado",
-        "pipelines",
-        "testing",
-        "ci-cd",
-        "flakiness-detection",
-        "test-analysis"
-      ]
+        "email": "glen.schrader@quorumsoftware.com"
+      }
     }
   ]
 }
