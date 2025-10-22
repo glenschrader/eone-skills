@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-skills",
   "version": "1.0.0",
-  "description": "Custom Claude Code skills for Azure DevOps and testing",
+  "description": "Custom Claude Code skills for Azure DevOps pipelines, testing, and work item management",
   "owner": {
     "name": "Glen Schrader",
     "email": "glen.schrader@quorumsoftware.com"
@@ -12,6 +12,17 @@
       "name": "ado-pipelines",
       "description": "Comprehensive Azure DevOps pipeline monitoring, test analysis, and flakiness detection",
       "source": "./ado-pipelines",
+      "category": "development",
+      "version": "1.0.0",
+      "author": {
+        "name": "Glen Schrader",
+        "email": "glen.schrader@quorumsoftware.com"
+      }
+    },
+    {
+      "name": "ado-work-items",
+      "description": "Comprehensive Azure DevOps work item management including creating, updating, querying work items and linking to branches",
+      "source": "./ado-work-items",
       "category": "development",
       "version": "1.0.0",
       "author": {
