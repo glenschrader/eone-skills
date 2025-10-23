@@ -56,9 +56,77 @@ To check the status of the latest pipeline run:
 
 3. Present the information in a clear, readable format to the user
 
-### Get Test Results for a Build
+### Monitor Currently Running Tests (Live Logs)
 
-To retrieve test run results for a specific build:
+To check on tests that are actively running in a pipeline build:
+
+1. **Get the build timeline** to identify which test jobs are running and their log IDs:
+   ```bash
+   az rest \
+     --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/build/builds/<BUILD_ID>/timeline?api-version=7.1" \
+     --resource "https://app.vssps.visualstudio.com"
+   ```
+
+2. **Parse the timeline** to find test suite jobs and their log IDs:
+   - Look for records where `type == "Job"` and name contains test suite identifiers (Base1, Base2, Gui3, etc.)
+   - Check the `state` field: "inProgress", "completed", "pending"
+   - Get the `log.id` field if available (only available once job starts producing output)
+   - Note the `startTime` to see how long tests have been running
+
+3. **Fetch live log content** for actively running test suites:
+   ```bash
+   az rest \
+     --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/build/builds/<BUILD_ID>/logs/<LOG_ID>?api-version=7.1" \
+     --resource "https://app.vssps.visualstudio.com"
+   ```
+
+   **Note**: Use `dev.azure.com` (not `visualstudio.com`) for the logs endpoint.
+
+4. **Search for test progress** in the log output:
+   ```bash
+   # Check for test pass/fail counts
+   az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/build/builds/<BUILD_ID>/logs/<LOG_ID>?api-version=7.1" \
+     --resource "https://app.vssps.visualstudio.com" | grep -E "tests passed:|tests failed:|test skipped:"
+
+   # View the last 100 lines of output
+   az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/build/builds/<BUILD_ID>/logs/<LOG_ID>?api-version=7.1" \
+     --resource "https://app.vssps.visualstudio.com" | tail -100
+
+   # Search for failures or errors
+   az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/build/builds/<BUILD_ID>/logs/<LOG_ID>?api-version=7.1" \
+     --resource "https://app.vssps.visualstudio.com" | grep -iE "failed|error"
+   ```
+
+5. **Interpret the test output**:
+   - Lines like `tests passed: 151, tests failed: 0, test skipped: 1` show current progress
+   - Test names appear in the format: `TestClassName > testMethodName()`
+   - Spring Boot startup logs indicate test initialization
+   - `DeleteFetchedAuditableEntitiesCommand` logs indicate test cleanup
+
+6. **Monitor multiple test suites**: Use the timeline to get log IDs for all running test jobs, then check each one
+
+**Important Notes:**
+- Test jobs only create log IDs once they start producing output (after initialization phase)
+- Jobs in "pending" or early "inProgress" state may not have logs yet
+- The timeline API is the authoritative source for finding which jobs are running and their log IDs
+- Logs are live and update as tests execute - you can fetch them repeatedly to see progress
+
+**Example workflow to monitor all running tests:**
+```bash
+# 1. Get timeline and extract test job status
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/build/builds/712539/timeline?api-version=7.1" \
+  --resource "https://app.vssps.visualstudio.com" | \
+  jq '.records[] | select(.type=="Job" and (.name | contains("Base") or contains("Gui"))) | {name: .name, state: .state, logId: .log.id}'
+
+# 2. For each job with a logId, check test progress
+az rest --url "https://dev.azure.com/quorumsoftware/QuorumSoftware/_apis/build/builds/712539/logs/86?api-version=7.1" \
+  --resource "https://app.vssps.visualstudio.com" | \
+  grep -E "tests passed:|tests failed:" | tail -5
+```
+
+### Get Test Results for a Build (Completed Tests)
+
+To retrieve test run results for a specific build (after tests have completed and published results):
 
 1. First, get the build URI from the build information (format: `vstfs:///Build/Build/<BUILD_ID>`)
 
@@ -83,6 +151,8 @@ To retrieve test run results for a specific build:
    - Overall test statistics
    - Breakdown by test suite
    - Link to detailed results for failed suites
+
+**Note**: Test results are only available via the test runs API after tests complete and publish their results. For live/running tests, use the timeline and logs endpoints described in the "Monitor Currently Running Tests" section above.
 
 ### Analyze Failed Tests and Correlate with Code Changes
 
