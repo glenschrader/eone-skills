@@ -154,9 +154,22 @@ To retrieve test run results for a specific build (after tests have completed an
    - `passedTests` in the summary = tests with outcome "Passed" in detailed results
    - To verify actual failures, always query: `/_apis/test/runs/<RUN_ID>/results?outcomes=Failed`
 
-5. Present a summary showing:
+5. **MANDATORY: Investigate ALL Unanalyzed Tests**:
+   - For EVERY test run that has `unanalyzedTests > 0`, you MUST fetch the detailed results to identify which specific tests failed
+   - Query the detailed results API for each test run with unanalyzed tests:
+     ```bash
+     az rest --url "https://quorumsoftware.visualstudio.com/<PROJECT_ID>/_apis/test/runs/<RUN_ID>/results?api-version=7.0" \
+       --resource "https://app.vssps.visualstudio.com"
+     ```
+   - Filter for tests with outcome "Failed" or "Unanalyzed" in the results
+   - Extract the test names (`automatedTestName` and `automatedTestStorage`)
+   - If there are many unanalyzed tests, you can add `&$top=100` to get up to 100 results per query
+   - **DO NOT skip this step** - users need to know WHICH tests failed, not just the count
+
+6. Present a comprehensive summary showing:
    - Overall test statistics (use `unanalyzedTests` as the failed count)
    - Breakdown by test suite
+   - **For each suite with unanalyzed tests:** List the specific test names that failed
    - Link to detailed results for failed suites
 
 **Note**: Test results are only available via the test runs API after tests complete and publish their results. For live/running tests, use the timeline and logs endpoints described in the "Monitor Currently Running Tests" section above.
