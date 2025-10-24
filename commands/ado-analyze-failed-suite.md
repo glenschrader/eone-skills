@@ -7,7 +7,7 @@ description: Analyze testSuiteFailed results across branches to identify true fa
 
 You are analyzing the testSuiteFailed test suite to determine which failures are:
 - New regressions introduced by the current branch
-- Pre-existing failures that also exist on master
+- Pre-existing failures that also exist on master or feature/wkfb-merge
 - Tests that have been fixed
 
 ## Your Task
@@ -37,8 +37,11 @@ Execute the following analysis workflow:
      --resource "https://app.vssps.visualstudio.com"
    ```
 
-### Step 2: Get Master Branch Test Results
+### Step 2: Get Baseline Branch Test Results
 
+Check both master and feature/wkfb-merge branches for baseline comparison:
+
+**Step 2a: Master Branch**
 1. Get the latest build from master that ran testSuiteFailed:
    ```bash
    az pipelines build list \
@@ -55,6 +58,20 @@ Execute the following analysis workflow:
    az rest --url "https://quorumsoftware.visualstudio.com/ecaedfc6-005f-4ee9-aa66-6da8c71a6ad1/_apis/test/runs/<MASTER_RUN_ID>/results?api-version=7.0" \
      --resource "https://app.vssps.visualstudio.com"
    ```
+
+**Step 2b: feature/wkfb-merge Branch**
+1. Get the latest build from feature/wkfb-merge that ran testSuiteFailed:
+   ```bash
+   az pipelines build list \
+     --org https://quorumsoftware.visualstudio.com \
+     --project QuorumSoftware \
+     --definition-ids 4308 \
+     --branch refs/heads/feature/wkfb-merge \
+     --top 10
+   ```
+2. Find a build that has `"failed": "True"` in templateParameters
+3. Get test results for testSuiteFailed from that build
+4. Get all test results (both passed and failed)
 
 ### Step 3: Get Previous Build on Current Branch
 
@@ -78,13 +95,13 @@ Compare the test results:
    - Extract `automatedTestStorage` + `automatedTestName` for each failed test
    - Note the `failingSince` field to see when each test started failing
 
-2. **Create a list of all tests on master branch**:
-   - Extract `automatedTestStorage` + `automatedTestName` for ALL tests (passed and failed)
-   - This tells you which tests are even present on master
+2. **Create a list of all tests on baseline branches**:
+   - Extract `automatedTestStorage` + `automatedTestName` for ALL tests (passed and failed) from both master and feature/wkfb-merge
+   - This tells you which tests are present on the baseline branches
 
 3. **Categorize each failed test**:
-   - **NEW REGRESSION**: Test fails on current branch but doesn't exist in master's testSuiteFailed at all
-   - **PRE-EXISTING**: Test fails on both current branch and master
+   - **NEW REGRESSION**: Test fails on current branch but doesn't exist in either master's or feature/wkfb-merge's testSuiteFailed
+   - **PRE-EXISTING**: Test fails on current branch AND also fails (or exists) in master or feature/wkfb-merge testSuiteFailed
    - **FIXED IN CURRENT BRANCH**: Test that was in previous build but is now passing
    - **FLAKY**: Test that appears/disappears across builds
 
@@ -109,26 +126,32 @@ Present results in this format:
 - Failed: Y
 - Passed: Z
 
-### Master Branch Comparison
+### Baseline Branch Comparisons
+**Master Branch:**
 - Build: <BUILD_NUMBER> (<BUILD_ID>)
 - Total tests in suite: A
-- These are different tests: <note if test composition differs>
+- Failed tests: X
+
+**feature/wkfb-merge Branch:**
+- Build: <BUILD_NUMBER> (<BUILD_ID>)
+- Total tests in suite: B
+- Failed tests: Y
 
 ### Progress Tracking
 Previous build on this branch: X failures
 Current build on this branch: Y failures
 **Improvement: X → Y** (fixed Z tests)
 
-### NEW REGRESSIONS (Tests that fail on your branch but don't exist on master):
+### NEW REGRESSIONS (Tests that fail on your branch but don't exist on master or feature/wkfb-merge):
 1. **TestClassName.testMethod()**
    - Error: <brief error message>
    - Failing since: Build <BUILD_ID> (<DATE>)
    - Status: NEW - introduced by your changes
 
-### PRE-EXISTING FAILURES (Also fail on master):
+### PRE-EXISTING FAILURES (Also fail on master or feature/wkfb-merge):
 1. **TestClassName.testMethod()**
    - Error: <brief error message>
-   - Status: Pre-existing, not your problem
+   - Status: Pre-existing on <master/feature/wkfb-merge>, not your problem
 
 ### FIXED TESTS (Were failing, now passing):
 1. **TestClassName.testMethod()**
@@ -145,10 +168,11 @@ Current build on this branch: Y failures
 
 - testSuiteFailed runs tests that previously failed in other suites
 - The composition of tests can differ between branches
-- A test not being present on master's testSuiteFailed means it passes on master
+- A test not being present on master's or feature/wkfb-merge's testSuiteFailed means it passes on those branches
 - Look at multiple builds to establish patterns, not just one build
 - Use `failingSince` field to track when failures started
 - **CRITICAL**: Just because a test appears in testSuiteFailed doesn't mean it's old - it could be NEW to that suite!
+- Check BOTH master and feature/wkfb-merge to determine if a failure is truly new or pre-existing
 
 ## Context Values
 
