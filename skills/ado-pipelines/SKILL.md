@@ -140,15 +140,22 @@ To retrieve test run results for a specific build (after tests have completed an
    - Test run name (test suite name)
    - Total tests
    - Passed tests
-   - Failed tests (totalTests - passedTests - notApplicableTests - incompleteTests)
-   - Not applicable tests
+   - **Failed tests**: Use `unanalyzedTests` field (Azure DevOps confusingly labels failed tests as "unanalyzed")
+     - Alternative calculation: `totalTests - passedTests - notApplicableTests - incompleteTests`
+   - Not applicable tests (`notApplicableTests` - these are tests with outcome "NotExecuted")
    - Incomplete tests
-   - Unanalyzed tests
+   - Unanalyzed tests (this field typically represents failed tests)
    - State (Completed, InProgress, etc.)
    - Web access URL for detailed results
 
-4. Present a summary showing:
-   - Overall test statistics
+4. **Understanding Azure DevOps Test Terminology**:
+   - `unanalyzedTests` in the summary = tests with outcome "Failed" in detailed results
+   - `notApplicableTests` in the summary = tests with outcome "NotExecuted" in detailed results
+   - `passedTests` in the summary = tests with outcome "Passed" in detailed results
+   - To verify actual failures, always query: `/_apis/test/runs/<RUN_ID>/results?outcomes=Failed`
+
+5. Present a summary showing:
+   - Overall test statistics (use `unanalyzedTests` as the failed count)
    - Breakdown by test suite
    - Link to detailed results for failed suites
 
