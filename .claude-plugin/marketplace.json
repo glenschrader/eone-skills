@@ -1,8 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "eone-skills",
-  "version": "1.0.0",
-  "description": "Claude Code skills for Azure DevOps pipelines, testing, work item management, and pull request lifecycle for eONE project",
+  "version": "1.1.0",
+  "description": "Claude Code skills for Azure DevOps pipelines, testing, work item management, pull request lifecycle, git worktree management, and heap dump analysis for eONE project",
   "owner": {
     "name": "Glen Schrader",
     "email": "glen.schrader@quorumsoftware.com"
@@ -10,13 +10,15 @@
   "plugins": [
     {
       "name": "eone-skills",
-      "description": "Azure DevOps skills for eONE project including pipelines, work items, and pull requests",
+      "description": "Azure DevOps and developer productivity skills for eONE project",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/ado-pipelines",
         "./skills/ado-work-items",
-        "./skills/ado-pr"
+        "./skills/ado-pr",
+        "./skills/create-worktree",
+        "./skills/heap-dump-analysis"
       ]
     }
   ]
